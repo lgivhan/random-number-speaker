@@ -120,9 +120,30 @@
         let timeoutId = null;
         let secondsRemaining = 120;
         let timerIntervalId = null;
+        let lastNumber = null;
+        let repeatCount = 0;
 
         function getRandomNumber() {
-            return Math.floor(Math.random() * 5) + 1;
+            let number;
+
+            // Pick different number if number has been said twice in a row
+            if (repeatCount >= 2) {
+                do {
+                     number = Math.floor(Math.random() * 5) + 1;
+                } while (number == lastNumber);
+            } else {
+                number = Math.floor(Math.random() * 5) + 1;
+            }
+
+            // Update tracking
+            if (number === lastNumber) {
+                repeatCount++;
+            } else {
+                repeatCount = 1;
+            }
+            lastNumber = number;
+
+            return number;
         }
 
         function speakNumber(number) {
