@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Number Speaker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .display {
+            font-size: 120px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stop-btn:hover {
+            box-shadow: 0 10px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .status {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Random Number Speaker</h1>
+        <div class="display" id="display">—</div>
+        <div class="timer" id="timer">2:00</div>
+        <div class="button-group">
+            <button id="startBtn" onclick="startSession()">Start</button>
+            <button id="stopBtn" class="stop-btn" onclick="stopSession()" disabled>Stop</button>
+        </div>
+        <div class="status" id="status">Click Start to begin</div>
+    </div>
+
+    <script>
+        let intervalId = null;
+        let timeoutId = null;
+        let secondsRemaining = 120;
+        let timerIntervalId = null;
+
+        function getRandomNumber() {
+            return Math.floor(Math.random() * 5) + 1;
+        }
+
+        function speakNumber(number) {
+            const utterance = new SpeechSynthesisUtterance(number.toString());
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            speechSynthesis.speak(utterance);
+        }
+
+        function updateDisplay(number) {
+            document.getElementById('display').textContent = number;
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(secondsRemaining / 60);
+            const seconds = secondsRemaining % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (secondsRemaining > 0) {
+                secondsRemaining--;
+            }
+        }
+
+        function announceNumber() {
+            const number = getRandomNumber();
+            updateDisplay(number);
+            speakNumber(number);
+        }
+
+        function startSession() {
+            // Reset state
+            stopSession();
+            secondsRemaining = 120;
+            updateTimer();
+            
+            // Update UI
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('status').textContent = 'Session in progress...';
+            document.getElementById('display').textContent = '—';
+            
+            // Start timer countdown
+            timerIntervalId = setInterval(updateTimer, 1000);
+            
+            // Announce first number immediately
+            announceNumber();
+            
+            // Set up interval for subsequent numbers (every 3 seconds)
+            intervalId = setInterval(announceNumber, 3000);
+            
+            // Set timeout to stop after 2 minutes
+            timeoutId = setTimeout(() => {
+                stopSession();
+                document.getElementById('status').textContent = 'Session complete!';
+                document.getElementById('display').textContent = '✓';
+            }, 120000);
+        }
+
+        function stopSession() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId);
+                timerIntervalId = null;
+            }
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            speechSynthesis.cancel();
+            
+            // Update status if manually stopped
+            if (secondsRemaining < 120 && secondsRemaining > 0) {
+                document.getElementById('status').textContent = 'Session stopped';
+            } else if (secondsRemaining === 120) {
+                document.getElementById('status').textContent = 'Click Start to begin';
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', stopSession);
+    </script>
+</body>
+</html>
